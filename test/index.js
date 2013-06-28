@@ -124,7 +124,6 @@ describe("sharefile API", function () {
             });
         });
 
-
         it("should authenticate an user using cache", function ( done ) {
             nock("https://foo.sharefile.com")
                 .get("/rest/getAuthID.aspx?username=bar&password=baz&op=login&fmt=json")
@@ -151,7 +150,6 @@ describe("sharefile API", function () {
                 });
             });
         });
-
 
         it("should refresh authid token", function ( done ) {
             var refreshTimespan = 100;
@@ -312,6 +310,44 @@ describe("sharefile API", function () {
                 done();
             });
         });
+    });
 
+    describe("back compatibility", function() {
+
+        it("should support 'getAuthID' and 'authid'", function () {
+
+            var login = nock("https://foo.sharefile.com")
+                .get("/rest/getAuthID.aspx?username=bar&password=baz&op=login&fmt=json")
+                .reply(200, { error: false, value: "xyz" });
+
+            var service = nock("https://foo.sharefile.com")
+                .get("/rest/folder.aspx?authid=xyz&path=%2F&op=list&fmt=json")
+                .reply(200, { error: false, value: "ok" });
+
+            var api = new API({ subdomain:"foo" });
+
+            var options = {
+                username: "bar",
+                password: "baz"
+            };
+            
+            api.getAuthID(options, function (err, authid) {
+                assert.ok(!err);
+                assert.equal('string', typeof authid);
+                assert.equal(36, authid.length);
+
+                api.folder({ authid: authid , path: "/" }, function (err, result) {
+                    assert.ok(!err);
+                    assert.equal("ok", result);
+
+                    // validates expectations
+                    login.done();
+                    service.done();
+
+                    done();
+                });
+            });
+
+        });
     });
 });

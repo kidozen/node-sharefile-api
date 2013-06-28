@@ -98,6 +98,10 @@ var ShareFile = function(settings) {
         });
     };
 
+    // back compatibility
+    this.getAuthID = function(options, cb) {
+        self.authenticate(options, cb)
+    };
 
     /*
     * Executes methods on a folder entity.
@@ -269,6 +273,8 @@ var ShareFile = function(settings) {
     var authSend = function(method, options, cb) {
 
         // If not 'auth' property, then tries to authenticate the user
+        options.auth = options.auth || options.authid; // back compatibility
+
         if (!options.auth) {
 
             self.authenticate({ username: options.username, password: options.password }, function (err, auth) {
@@ -304,7 +310,7 @@ var ShareFile = function(settings) {
                 };
 
                 Object.keys(options)
-                    .filter(function (p) { return [ "auth", "username", "password" ].indexOf(p) === -1; })
+                    .filter(function (p) { return [ "auth", "authid", "username", "password" ].indexOf(p) === -1; })
                     .map(function (p) { sendOptions[p] = options[p]; });
 
                 // Invokes podio's method
