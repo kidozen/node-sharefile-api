@@ -67,6 +67,7 @@ var ShareFile = function(settings) {
         }
 
         options.op = "login";
+
         send("getAuthID", options, function (err, result) {
 
             if (err) {
@@ -83,7 +84,7 @@ var ShareFile = function(settings) {
 
             // creates cache item
             var item = {
-                authid      : result,
+                user        : result,
                 expiresOn   : new Date().getTime() + self.settings.refresh,
                 username    : options.username,
                 password    : options.password
@@ -106,8 +107,8 @@ var ShareFile = function(settings) {
     /*
     * Executes methods on a folder entity.
     * @param options {object} required:
-    *   - op:       {string} optional parameter to tell what operation to perform. Default: "list"
-    *   - authid:   {string} is requerid if 'settings.authid' is null
+    *   - op    : {string} optional parameter to tell what operation to perform. Default: "list"
+    *   - auth  : {string} is requered if no username and password were specified on constructor 
     *   You must also add to 'options' parameter, all properties required by the specified operation.
     *   A list of valid operations and their parameters can be found at: http://api.sharefile.com/https.aspx#folder
     * @param cb {function} required callback function
@@ -133,8 +134,8 @@ var ShareFile = function(settings) {
     /*
     * Executes methods on a file entity.
     * @param options {object} required:
-    *   - op:       {string} required parameter to tell what operation to perform.
-    *   - authid:   {string} is requerid if 'settings.authid' is null
+    *   - op    : {string} required parameter to tell what operation to perform.
+    *   - auth  : {string} is requered if no username and password were specified on constructor 
     *   You must also add to 'options' parameter, all properties required by the specified operation.
     *   A list of valid operations and their parameters can be found at: http://api.sharefile.com/https.aspx#file
     * @param cb {function} required callback function
@@ -158,8 +159,8 @@ var ShareFile = function(settings) {
     /*
     * Executes methods on a user entity.
     * @param options {object} required:
-    *   - op:       {string} required parameter to tell what operation to perform.
-    *   - authid:   {string} is requerid if 'settings.authid' is null
+    *   - op    : {string} required parameter to tell what operation to perform.
+    *   - auth  : {string} is requered if no username and password were specified on constructor 
     *   You must also add to 'options' parameter, all properties required by the specified operation.
     *   A list of valid operations and their parameters can be found at: http://api.sharefile.com/https.aspx#users
     * @param cb {function} required callback function
@@ -183,8 +184,8 @@ var ShareFile = function(settings) {
     /*
     * Executes methods on a user group.
     * @param options {object} required:
-    *   - op:       {string} required parameter to tell what operation to perform.
-    *   - authid:   {string} is requerid if 'settings.authid' is null
+    *   - op    : {string} required parameter to tell what operation to perform.
+    *   - auth  : {string} is requered if no username and password were specified on constructor 
     *   You must also add to 'options' parameter, all properties required by the specified operation.
     *   A list of valid operations and their parameters can be found at: http://api.sharefile.com/https.aspx#group
     * @param cb {function} required callback function
@@ -208,8 +209,8 @@ var ShareFile = function(settings) {
     /*
     * Executes methods on a user group.
     * @param options {object} required:
-    *   - query:    {string} required parameter.
-    *   - authid:   {string} is requerid if 'settings.authid' is null
+    *   - query : {string} required parameter.
+    *   - auth  : {string} is requered if no username and password were specified on constructor 
     * @param cb {function} required callback function
     * @api public
     *
@@ -306,7 +307,7 @@ var ShareFile = function(settings) {
             } else {
 
                 var sendOptions = {
-                    authid: item.authid
+                    authid: item.user.authid
                 };
 
                 Object.keys(options)
