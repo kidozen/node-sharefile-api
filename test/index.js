@@ -42,7 +42,7 @@ describe("sharefile API", function () {
         }
     });
 
-    it("should throw when invalid timeout", function ( done ) {
+    it("should throw when invalid refresh", function ( done ) {
         try {
             new API({refresh: "foo"});
             done(new Error('should have thrown'));

@@ -39,8 +39,7 @@ var ShareFile = function(settings) {
     var cacheUser   = new Cache(this.settings.timeout);   // Cache by auth tokens 
 
     /*
-    * Authenticates an user, updates the property settings.authid and returns the operation's result.
-    * After the user was authenticated, all subsequent request automatically will use the 'settings.authid' value. 
+    * Authenticates an user and returns the 'auth' token.
     * @param options {object} optional, 'options' could have two properties:
     *   - username:  {string}  
     *   - password:  {string}
