@@ -62,7 +62,7 @@ var ShareFile = function(settings) {
         var auth = cacheUser.get(options.username);
         if (auth) {
             var item = cacheAuth.get(auth);
-            if (item && item.password === options.password && item.expiresOn > now) return cb(null, auth);
+            if (item && item.password === options.password && item.expiresOn > now) return cb(null, {auth: auth});
         }
 
         options.op = "login";
@@ -94,13 +94,16 @@ var ShareFile = function(settings) {
             cacheUser.set(options.username, auth);
             
             // returns token
-            cb(null, auth);
+            cb(null, {auth: auth});
         });
     };
 
     // back compatibility
     this.getAuthID = function(options, cb) {
-        self.authenticate(options, cb)
+        self.authenticate(options, function(err, result){
+            if (err) return cb(err);
+            cb(null, {authid: result.auth});
+        })
     };
 
     /*
@@ -277,11 +280,11 @@ var ShareFile = function(settings) {
 
         if (!options.auth) {
 
-            self.authenticate({ username: options.username, password: options.password }, function (err, auth) {
+            self.authenticate({ username: options.username, password: options.password }, function (err, result) {
                 if (err) return cb(err);
 
                 // tries again
-                options.auth = auth;
+                options.auth = result.auth;
                 authSend(method, options, cb);
             });
 
@@ -295,9 +298,9 @@ var ShareFile = function(settings) {
             if (new Date().getTime() > item.expiresOn) {
             
                 // renews authId
-                self.authenticate({ username: item.username, password: item.password }, function (err, auth) {
+                self.authenticate({ username: item.username, password: item.password }, function (err, result) {
                     if (err) return cb(err);
-                    if (options.auth !== auth) return cb(new Error("Could't refresh the authId."));
+                    if (options.auth !== result.auth) return cb(new Error("Couldn't refresh the authId."));
 
                     // tries again
                     authSend(method, options, cb);

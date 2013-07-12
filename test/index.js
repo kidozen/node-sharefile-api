@@ -9,7 +9,7 @@ describe("sharefile API", function () {
         done();
     });
 
-    it("should throw when invalid settings", function ( done ) {
+    it("should throw when invalid settings", function (done) {
         try {
             new API("foo");
             done(new Error('should have thrown'));
@@ -20,7 +20,7 @@ describe("sharefile API", function () {
         }
     });
 
-    it("should throw when no subdomain", function ( done ) {
+    it("should throw when no subdomain", function (done) {
         try {
             new API();
             done(new Error('should have thrown'));
@@ -31,7 +31,7 @@ describe("sharefile API", function () {
         }
     });
 
-    it("should throw when invalid timeout", function ( done ) {
+    it("should throw when invalid timeout", function (done) {
         try {
             new API({timeout: "foo"});
             done(new Error('should have thrown'));
@@ -42,7 +42,7 @@ describe("sharefile API", function () {
         }
     });
 
-    it("should throw when invalid refresh", function ( done ) {
+    it("should throw when invalid refresh", function (done) {
         try {
             new API({refresh: "foo"});
             done(new Error('should have thrown'));
@@ -53,7 +53,7 @@ describe("sharefile API", function () {
         }
     });
 
-    it("should throw when invalid domain", function ( done ) {
+    it("should throw when invalid domain", function (done) {
         try {
             new API({domain: 0});
             done(new Error('should have thrown'));
@@ -64,7 +64,7 @@ describe("sharefile API", function () {
         }
     });
 
-    it("should be able to create an instance", function ( done ) {
+    it("should be able to create an instance", function (done) {
         var api = new API({ subdomain:"foo", domain:"bar", timeout: 1234, refresh: 5678 });
         assert.ok(api);
         assert.equal("bar", api.settings.domain);
@@ -74,7 +74,7 @@ describe("sharefile API", function () {
         done();
     });
 
-    it("should be able to create an instance and set defaults", function ( done ) {
+    it("should be able to create an instance and set defaults", function (done) {
         var api = new API({ subdomain:"kidozen" });
         assert.ok(api);
         assert.equal("sharefile.com", api.settings.domain);
@@ -86,10 +86,10 @@ describe("sharefile API", function () {
 
     describe ("authenticate", function () {
 
-        it("should use credentials from initialization", function ( done ) {
+        it("should use credentials from initialization", function (done) {
             nock("https://foo.sharefile.com")
                 .get("/rest/getAuthID.aspx?username=bar&password=baz&op=login&fmt=json")
-                .reply(200, { error: false, value: "xyz" });
+                .reply(200, { error: false, value: {authid: "xyz"} });
 
             var api = new API({ 
                 subdomain   : "foo",
@@ -99,16 +99,17 @@ describe("sharefile API", function () {
 
             api.authenticate({}, function(err, result){
                 assert.ok(!err);
-                assert.equal('string', typeof result);
-                assert.equal(36, result.length);
+                assert.ok(result);
+                assert.equal('string', typeof result.auth);
+                assert.equal(36, result.auth.length);
                 done();
             });
         });
 
-        it("should authenticate an user", function ( done ) {
+        it("should authenticate an user", function (done) {
             nock("https://foo.sharefile.com")
                 .get("/rest/getAuthID.aspx?username=bar&password=baz&op=login&fmt=json")
-                .reply(200, { error: false, value: "xyz" });
+                .reply(200, { error: false, value: {authid: "xyz"} });
 
             var api = new API({ subdomain:"foo" });
             var options = {
@@ -118,16 +119,17 @@ describe("sharefile API", function () {
 
             api.authenticate(options, function(err, result){
                 assert.ok(!err);
-                assert.equal('string', typeof result);
-                assert.equal(36, result.length);
+                assert.ok(result);
+                assert.equal('string', typeof result.auth);
+                assert.equal(36, result.auth.length);
                 done();
             });
         });
 
-        it("should authenticate an user using cache", function ( done ) {
+        it("should authenticate an user using cache", function (done) {
             nock("https://foo.sharefile.com")
                 .get("/rest/getAuthID.aspx?username=bar&password=baz&op=login&fmt=json")
-                .reply(200, { error: false, value: "xyz" });
+                .reply(200, { error: false, value: {authid: "xyz"} });
 
             var api = new API({ subdomain:"foo" });
             var options = {
@@ -135,29 +137,30 @@ describe("sharefile API", function () {
                 password    : "baz"
             };
 
-            api.authenticate(options, function(err, auth){
+            api.authenticate(options, function(err, result){
                 assert.ok(!err);
-                assert.equal('string', typeof auth);
-                assert.equal(36, auth.length);
+                assert.ok(result);
+                assert.equal('string', typeof result.auth);
+                assert.equal(36, result.auth.length);
 
                 // authenticating again with the same user/password will not send a request
                 nock.cleanAll()
 
-                api.authenticate(options, function(err, auth2){
+                api.authenticate(options, function(err, result2){
                     assert.ok(!err);
-                    assert.equal(auth, auth2);
+                    assert.equal(result.auth, result2.auth);
                     done();
                 });
             });
         });
 
-        it("should refresh authid token", function ( done ) {
+        it("should refresh authid token", function (done) {
             var refreshTimespan = 100;
 
             // authentication request
             nock("https://foo.sharefile.com")
                 .get("/rest/getAuthID.aspx?username=bar&password=baz&op=login&fmt=json")
-                .reply(200, { error: false, value: "xyz" });
+                .reply(200, { error: false, value: {authid: "xyz"} });
 
             // first request before token was refreshed
             nock("https://foo.sharefile.com")
@@ -167,7 +170,7 @@ describe("sharefile API", function () {
             // refreshs token
             nock("https://foo.sharefile.com")
                 .get("/rest/getAuthID.aspx?username=bar&password=baz&op=login&fmt=json")
-                .reply(200, { error: false, value: "pqr" });
+                .reply(200, { error: false, value: {authid: "pqr"} });
 
             // second request after token was refreshed
             nock("https://foo.sharefile.com")
@@ -180,19 +183,20 @@ describe("sharefile API", function () {
                 password    : "baz"
             };
 
-            api.authenticate(options, function(err, auth){
+            api.authenticate(options, function(err, result){
                 assert.ok(!err);
-                assert.equal('string', typeof auth);
-                assert.equal(36, auth.length);
+                assert.ok(result);
+                assert.equal('string', typeof result.auth);
+                assert.equal(36, result.auth.length);
 
-                api.folder({ auth: auth , path: "/alfa" }, function (err, result) {
+                api.folder({ auth: result.auth, path: "/alfa" }, function (err, result) {
                     assert.ok(!err);
                     assert.equal("ok", result);
                 });
 
                 // second request afer token got expired
                 setTimeout( function() {
-                    api.folder({ auth: auth , path: "/beta" }, function (err, result) {
+                    api.folder({ auth: result.auth, path: "/beta" }, function (err, result) {
                         assert.ok(!err);
                         assert.equal("ok", result);
                         done();
@@ -206,11 +210,11 @@ describe("sharefile API", function () {
 
         var api, auth;
 
-        before(function ( done ) {
+        before(function (done) {
 
             nock("https://foo.sharefile.com")
                 .get("/rest/getAuthID.aspx?username=bar&password=baz&op=login&fmt=json")
-                .reply(200, { error: false, value: "xyz" });
+                .reply(200, {error: false, value: {authid: "xyz"}});
 
             api = new API({ subdomain:"foo" });
 
@@ -221,14 +225,15 @@ describe("sharefile API", function () {
             
             api.authenticate(options, function (err, result) {
                 assert.ok(!err);
-                assert.equal('string', typeof result);
-                assert.equal(36, result.length);
-                auth = result;
+                assert.ok(result);
+                assert.equal('string', typeof result.auth);
+                assert.equal(36, result.auth.length);
+                auth = result.auth;
                 done();
             });
         });
 
-        it("folder", function ( done ){
+        it("folder", function (done) {
             nock("https://foo.sharefile.com")
                 .get("/rest/folder.aspx?authid=xyz&path=%2F&op=list&fmt=json")
                 .reply(200, { error: false, value: "ok" });
@@ -240,7 +245,7 @@ describe("sharefile API", function () {
             });
         });
 
-        it("file", function ( done ){
+        it("file", function (done) {
             nock("https://foo.sharefile.com")
                 .get("/rest/file.aspx?authid=xyz&op=upload&filename=%2Falfa&fmt=json")
                 .reply(200, { error: false, value: "ok" });
@@ -252,7 +257,7 @@ describe("sharefile API", function () {
             });
         });
 
-        it("users", function ( done ){
+        it("users", function (done) {
             nock("https://foo.sharefile.com")
                 .get("/rest/users.aspx?authid=xyz&op=getaddressbook&fmt=json")
                 .reply(200, { error: false, value: "ok" });
@@ -264,7 +269,7 @@ describe("sharefile API", function () {
             });
         });
 
-        it("group", function ( done ){
+        it("group", function (done) {
             nock("https://foo.sharefile.com")
                 .get("/rest/group.aspx?authid=xyz&op=list&fmt=json")
                 .reply(200, { error: false, value: "ok" });
@@ -276,7 +281,7 @@ describe("sharefile API", function () {
             });
         });
 
-        it("search", function ( done ){
+        it("search", function (done) {
             nock("https://foo.sharefile.com")
                 .get("/rest/search.aspx?authid=xyz&query=*&op=search&fmt=json")
                 .reply(200, { error: false, value: "ok" });
@@ -288,17 +293,17 @@ describe("sharefile API", function () {
             });
         });
 
-        it("should fail if no credentials or auth prop were provided", function ( done ){
+        it("should fail if no credentials or auth prop were provided", function (done) {
             api.folder({ op: "list", path: "/" }, function (err, result) {
                 assert.ok(err);
                 done();
             });
         });
 
-        it("should use credentials if auth property wasn't provided", function ( done ){
+        it("should use credentials if auth property wasn't provided", function (done) {
             nock("https://foo.sharefile.com")
                 .get("/rest/getAuthID.aspx?username=alfa&password=beta&op=login&fmt=json")
-                .reply(200, { error: false, value: "pqr" });
+                .reply(200, { error: false, value: {authid: "pqr"} });
 
             nock("https://foo.sharefile.com")
                 .get("/rest/folder.aspx?authid=pqr&op=list&path=%2F&fmt=json")
@@ -316,11 +321,11 @@ describe("sharefile API", function () {
 
         it("should support 'getAuthID' and 'authid'", function () {
 
-            var login = nock("https://foo.sharefile.com")
+            nock("https://foo.sharefile.com")
                 .get("/rest/getAuthID.aspx?username=bar&password=baz&op=login&fmt=json")
-                .reply(200, { error: false, value: "xyz" });
+                .reply(200, { error: false, value: {authid: "xyz"} });
 
-            var service = nock("https://foo.sharefile.com")
+            nock("https://foo.sharefile.com")
                 .get("/rest/folder.aspx?authid=xyz&path=%2F&op=list&fmt=json")
                 .reply(200, { error: false, value: "ok" });
 
@@ -331,14 +336,15 @@ describe("sharefile API", function () {
                 password: "baz"
             };
             
-            api.getAuthID(options, function (err, authid) {
+            api.getAuthID(options, function (err, result) {
                 assert.ok(!err);
-                assert.equal('string', typeof authid);
-                assert.equal(36, authid.length);
+                assert.ok(result);
+                assert.equal('string', typeof result.authid);
+                assert.equal(36, result.authid.length);
 
-                api.folder({ authid: authid , path: "/" }, function (err, result) {
+                api.folder({ authid: result.authid, path: "/" }, function (err, result2) {
                     assert.ok(!err);
-                    assert.equal("ok", result);
+                    assert.equal("ok", result2);
 
                     // validates expectations
                     login.done();
