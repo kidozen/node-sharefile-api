@@ -11,9 +11,9 @@ var uuid        = require("node-uuid");
  * Handles invocations to ShareFiles's methods.
  * @param settings {object} required
  *  -   timeout:    {number} optional session timeout. default 15 minutes in milleseconds  
+ *  -   refresh:    {number} optional token renew timeout in milliseconds
  *  -   domain:     {string} optional property to define the domain. Default: "sharefile.com"
  *  -   subdomain:  {string} required property 
- *  -   authid:     {string} optional authid that will be used for all subsequent API calls. Default: null 
  * @returns {ShareFile}
  * @api public
  */
@@ -62,7 +62,7 @@ var ShareFile = function(settings) {
         var auth = cacheUser.get(options.username);
         if (auth) {
             var item = cacheAuth.get(auth);
-            if (item && item.password === options.password && item.expiresOn > now) return cb(null, {auth: auth});
+            if (item && item.password === options.password && item.expiresOn > now) return cb(null, item.user);
         }
 
         options.op = "login";
@@ -78,32 +78,39 @@ var ShareFile = function(settings) {
                 return cb(err);
             }
             
+            var sendgridAuthid = result.authid;
+            delete result.authid;
+
             // reuse auth by username
             auth = auth || uuid.v4();
+            result.auth = auth;
 
             // creates cache item
             var item = {
+                authid      : sendgridAuthid,
                 user        : result,
                 expiresOn   : new Date().getTime() + self.settings.refresh,
                 username    : options.username,
                 password    : options.password
             };
 
+            // removes
             // Updates cache
             cacheAuth.set(auth, item);
             cacheUser.set(options.username, auth);
             
-            // returns token
-            cb(null, {auth: auth});
+            // returns data
+            cb(null, result);
         });
     };
 
     // back compatibility
     this.getAuthID = function(options, cb) {
-        self.authenticate(options, function(err, result){
+        self.authenticate(options, function(err, result) {
             if (err) return cb(err);
-            cb(null, {authid: result.auth});
-        })
+            result.authid = result.auth;
+            cb(null, result);
+        });
     };
 
     /*
@@ -309,7 +316,7 @@ var ShareFile = function(settings) {
             } else {
 
                 var sendOptions = {
-                    authid: item.user.authid
+                    authid: item.authid
                 };
 
                 Object.keys(options)

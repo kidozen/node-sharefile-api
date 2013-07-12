@@ -1,6 +1,6 @@
 {
     "name": "sharefile-api",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "description": "Module to invoke ShareFile REST API services",
     "author": "Kidozen <support@kidozen.com>",
     "contributors": [ 

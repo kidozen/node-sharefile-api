@@ -339,6 +339,8 @@ describe("sharefile API", function () {
             api.getAuthID(options, function (err, result) {
                 assert.ok(!err);
                 assert.ok(result);
+                assert.equal('string', typeof result.auth);
+                assert.equal(36, result.auth.length);
                 assert.equal('string', typeof result.authid);
                 assert.equal(36, result.authid.length);
 
