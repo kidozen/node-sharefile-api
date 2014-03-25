@@ -1,9 +1,13 @@
 {
     "name": "sharefile-api",
-    "version": "0.0.4",
+    "version": "0.0.5",
     "description": "Module to invoke ShareFile REST API services",
-    "author": "Kidozen <support@kidozen.com>",
-    "contributors": [ 
+    "author": "Kidozen <development@kidozen.com>",
+    "contributors": [
+        {
+            "name" : "Gustavo Machado",
+            "email" : "gus@kidozen.com"
+        }, 
         {
             "name": "Silvio Massari",
             "email": "silvio@kidozen.com"
@@ -12,10 +16,6 @@
     "main": "index.js",
     "scripts": {
         "test": "mocha -R spec test"
-    },
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/kidozen/node-sharefile-api.git"
     },
     "keywords": [
         "kidozen",
